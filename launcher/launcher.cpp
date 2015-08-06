@@ -177,6 +177,7 @@ void Launcher::initDevices()
 Launcher::~Launcher()
 {
 	delete[] _global_work;
+	// TODO clean the buffer vector
 }
 
 void Launcher::initContext()
@@ -218,8 +219,23 @@ void Launcher::initCommandQueue()
 	}
 }
 
-template <typename... OpenCLArgument>
-void Launcher::setArgs(OpenCLArgument... args)
+void Launcher::allocAndSet(OclArg arg)
 {
-	// TODO: use this way
+	cl_mem buffer;
+	int err;
+	buffer = clCreateBuffer(getContext(), arg.getClMemFlag(), arg.getSize(), NULL, &err);
+	clCheckError(err, "Error creating buffer");
+  clCheckError(clSetKernelArg(getKernel(), _numArgs++, sizeof(cl_mem), &buffer), "Error setting argument");
+	_buffers.push_back(buffer);
 }
+
+void Launcher::set(OclArg arg)
+{
+  clCheckError(clSetKernelArg(getKernel(), _numArgs++, arg.getSize(), arg.getPtr()), "Error setting argument");
+}
+
+//template <class... OpenCLArgument>
+//void Launcher::setArgs(OpenCLArgument... args)
+//{
+//	// TODO: use this way
+//}

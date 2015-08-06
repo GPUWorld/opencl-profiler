@@ -14,8 +14,57 @@
 #include "execution.hpp"
 #include <stdio.h>
 #include <limits.h>
+#include <iostream>
 
 using namespace std;
+
+enum ArgType {
+	BUFFER,
+	OTHER
+};
+
+class OclArg {
+private:
+	size_t _size;
+	ArgType _argType;
+	cl_mem_flags _clMemFlags;
+	void **_ptr;
+public:
+	OclArg(size_t size, ArgType argType, cl_mem_flags clMemFlags, void **ptr=NULL) :
+		_size(size), _argType(argType), _clMemFlags(clMemFlags), _ptr(ptr) {};
+
+	ArgType getArgType() const {
+		return _argType;
+	}
+
+	void setArgType(ArgType argType) {
+		this->_argType = argType;
+	}
+
+	cl_mem_flags getClMemFlag() const {
+		return _clMemFlags;
+	}
+
+	void setClMemFlag(cl_mem_flags clMemFlag) {
+		this->_clMemFlags = clMemFlag;
+	}
+
+	size_t getSize() const {
+		return _size;
+	}
+
+	void setSize(size_t size) {
+		this->_size = size;
+	}
+
+	void** getPtr() const {
+		return _ptr;
+	}
+
+	void setPtr(void** ptr) {
+		this->_ptr = ptr;
+	}
+};
 
 class Launcher {
 private:
@@ -37,10 +86,12 @@ private:
 	cl_context _context;
 	std::vector<cl_platform_id> _platforms;
 	std::vector<cl_device_id> _devices;
+	std::vector<cl_mem> _buffers;
 	cl_command_queue _commandQueue;
 	cl_device_id _currentDevice;
 	cl_kernel _kernel;
 	cl_program _program;
+	int _numArgs;
 
 	// State flags
 	bool _isInit;
@@ -59,7 +110,7 @@ private:
 
 public:
 	inline Launcher(unsigned int min, unsigned int max, unsigned int dim, unsigned int step) :
-		_min(min), _max(max), _dim(dim), _step(step), _best(NULL), _isInit(false)
+		_min(min), _max(max), _dim(dim), _step(step), _best(NULL), _isInit(false), _numArgs(0)
 	{
 		init();
 		_global_work = new size_t[_dim];
@@ -85,8 +136,29 @@ public:
 
 	Execution * getBest() { return _best; }
 
-	template <typename... OpenCLArgument>
-	void setArgs(OpenCLArgument... args);
+	void allocAndSet(OclArg arg);
+
+	void set(OclArg arg);
+
+	void setArgs(OclArg arg) {
+		if (arg.getArgType() == BUFFER) {
+			allocAndSet(arg);
+		} else {
+			set(arg);
+		}
+	}
+
+	template <class... T>
+	void setArgs(OclArg arg, T... args)
+	{
+		if ( arg.getArgType() == BUFFER ) {
+			allocAndSet(arg);
+		} else {
+			set(arg);
+		}
+
+		setArgs(args...);
+	}
 
 	static inline void clCheckError(cl_int clError, char* errorString) {
 		if (clError != CL_SUCCESS) {
@@ -95,44 +167,4 @@ public:
 		}
 	}
 };
-
-enum ArgType {
-	BUFFER,
-	OTHER
-};
-
-class OpenCLArgument {
-private:
-	size_t _size;
-	ArgType _argType;
-	cl_mem_flags _clMemFlags;
-public:
-	OpenCLArgument(size_t size, ArgType argType, cl_mem_flags clMemFlags) :
-		_size(size), _argType(argType), _clMemFlags(clMemFlags) {};
-
-	ArgType getArgType() const {
-		return _argType;
-	}
-
-	void setArgType(ArgType argType) {
-		this->_argType = argType;
-	}
-
-	cl_mem_flags getClMemFlag() const {
-		return _clMemFlags;
-	}
-
-	void setClMemFlag(cl_mem_flags clMemFlag) {
-		this->_clMemFlags = clMemFlag;
-	}
-
-	size_t getSize() const {
-		return _size;
-	}
-
-	void setSize(size_t size) {
-		this->_size = size;
-	}
-};
-
 #endif /* LAUNCHER_HPP_ */
