@@ -140,7 +140,8 @@ public:
 
 	void set(OclArg arg);
 
-	void setArgs(OclArg arg) {
+	void setArgs(OclArg arg)
+	{
 		if (arg.getArgType() == BUFFER) {
 			allocAndSet(arg);
 		} else {
@@ -159,6 +160,8 @@ public:
 
 		setArgs(args...);
 	}
+
+	void printStats();
 
 	static inline void clCheckError(cl_int clError, char* errorString) {
 		if (clError != CL_SUCCESS) {

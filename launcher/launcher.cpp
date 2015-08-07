@@ -234,8 +234,22 @@ void Launcher::set(OclArg arg)
   clCheckError(clSetKernelArg(getKernel(), _numArgs++, arg.getSize(), arg.getPtr()), "Error setting argument");
 }
 
-//template <class... OpenCLArgument>
-//void Launcher::setArgs(OpenCLArgument... args)
-//{
-//	// TODO: use this way
-//}
+void Launcher::printStats()
+{
+	cout << "Number of executions: " << getNumberOfExecutions() << endl;
+	cout << "Best time: " << getBest()->getTime() << " us" << endl;
+	cout << "Best configuration: ";
+	switch (_dim) {
+	case 1:
+		cout << "x=" << getBest()->getX() << endl;
+		break;
+	case 2:
+		cout << "x=" << getBest()->getX() << ", y=" << getBest()->getY() << endl;
+		break;
+	case 3:
+		cout << "x=" << getBest()->getX() << ", y=" << getBest()->getY() << ", z=" << getBest()->getZ() << endl;
+		break;
+	default:
+		throw;
+	}
+}
